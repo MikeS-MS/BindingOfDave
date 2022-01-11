@@ -44,6 +44,7 @@ function Level:load()
     if self.currentRoom then
         local layers = self.currentRoom.layers
 
+        -- setup objects from map layers
         for x = 1, #layers do
             local layer = layers[x]
             if layer.name == "Collisions" then
@@ -76,9 +77,11 @@ function Level:load()
                 end
             end
         end
+
+            -- spawn player
+        self.persistent_player = Player:new(self.spawn_location.x, self.spawn_location.y, self.global_settings.world, "data/Player.png", self.global_settings, self)
     end
     -- self:spawnMapCollisions()
-    -- self.currentRoom:initWorldCollision(self.global_settings.world)
 end
 
 function Level:unload()
@@ -93,6 +96,7 @@ function Level:unload()
     end
 end
 
+-- deprecated
 function Level:spawnMapCollisions()
         local width, height = love.graphics.getDimensions()
         -- left
@@ -106,11 +110,23 @@ function Level:spawnMapCollisions()
 end
 
 function Level:update(dt)
-    self.currentRoom:update(dt)
+    if self.currentRoom ~= nil then
+        self.currentRoom:update(dt)
+    end
+
+    if self.persistent_player ~= nil then
+        self.persistent_player:update(dt)
+    end
 end
 
 function Level:draw()
-    self.currentRoom:draw(0, 0, self.global_settings.scale.x, self.global_settings.scale.y)
+    if self.currentRoom ~= nil then
+        self.currentRoom:draw(0, 0, self.global_settings.scale.x, self.global_settings.scale.y)
+    end
+
+    if self.persistent_player ~= nil then
+        self.persistent_player:draw()
+    end
 end
 
 return Level

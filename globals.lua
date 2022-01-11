@@ -1,8 +1,8 @@
 Globals = {
     world = nil,
     tile = {
-        width = 30,
-        height = 30
+        width = 32,
+        height = 32
     },
     scale = {
         x = 1,

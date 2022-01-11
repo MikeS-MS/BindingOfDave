@@ -7,7 +7,7 @@ function Player:CreateCollision(x, y, world, width, height, scale)
                                       y * scale.y,
                                       'dynamic'
                                      )
-    local shape = love.physics.newRectangleShape((width / 2) * scale.x, (height / 2) * scale.y)
+    local shape = love.physics.newRectangleShape(width * scale.x, height * scale.y)
     local fixture = love.physics.newFixture(body, shape)
     return body, shape, fixture
 end
@@ -15,14 +15,13 @@ end
 function Player:new(x, y, world, imagefilename, global_settings, level)
     local image = love.graphics.newImage(imagefilename)
     local width, height = image:getWidth(), image:getHeight()
-    local bodywidth, bodyheight = (width / 2) / 1.2, (height / 2) / 1.2
     local body, shape, fixture = Player:CreateCollision(
-                                                        (x - bodywidth / 2),
-                                                        (y - bodyheight / 2),
+                                                        x - (width / 2),
+                                                        y - (height / 2),
                                                         world,
-                                                        width / 1.2,
-                                                        height / 1.2,
-                                                        {x = 1, y = 1}
+                                                        width,
+                                                        height,
+                                                        global_settings.scale
                                                         )
     body:setFixedRotation(true)
     body:setUserData("player")
@@ -35,7 +34,7 @@ function Player:OnScaleChanged(new_scale)
     -- cleanup
     local body = self.fixture:getBody()
     self.fixture:destroy()
-    
+
     local scale = {x = 1, y = 1}
 
     if new_scale.x ~= self.global_settings.scale.x or new_scale.y ~= self.global_settings.scale.y then
@@ -58,7 +57,7 @@ end
 
 function Player:getTransform()
     local x, y = self.fixture:getBody():getX(), self.fixture:getBody():getY()
-    return {position = {x = x, y = y}, origin = {x = self.image:getWidth() / 2, y = self.image:getWidth() / 2}}
+    return {position = {x = x, y = y}, origin = {x = self.image:getWidth() / 2, y = self.image:getHeight() / 2}}
 end
 
 function Player:RotateToFacePosition(x, y)
@@ -91,7 +90,7 @@ end
 function Player:draw()
     love.graphics.setColor(255, 255, 255)
     local transform = self:getTransform()
-    love.graphics.draw(self.image, transform.position.x, transform.position.y, self.rotation, self.global_settings.scale.x, self.global_settings.scale.y, transform.origin.x, transform.origin.y*1.5)
+    love.graphics.draw(self.image, transform.position.x, transform.position.y, self.rotation, self.global_settings.scale.x, self.global_settings.scale.y, transform.origin.x, transform.origin.y)
 end
 
 return Player
