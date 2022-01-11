@@ -23,6 +23,9 @@ function Level:setCurrentRoom(room)
     local scale = {x = 1, y = 1}
     scale.x = width / (room.width * self.global_settings.tile.width)
     scale.y = height / (room.height * self.global_settings.tile.height)
+    if scale.x < 1 and scale.y < 1 then
+        self.currentRoom:resize(width + (width * scale.x), height + (height * scale.y))
+    end
     self.global_settings:OnScaleChangedCallback(scale)
     self:OnScaleChanged(scale)
     self.global_settings.scale.x = scale.x
