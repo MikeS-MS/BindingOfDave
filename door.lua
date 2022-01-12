@@ -1,13 +1,14 @@
-Door = {}
+Entity = require("entity")
+Door = Entity
 
-
-function Door:new(x, y, width, height, enabled)
-    local object = {position = {x = x, y = y}, size = {width = width, height = height}, enabled = enabled}
+function Door:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, id, enabled)
+    local object = Entity:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, id)
+    object.enabled = enabled
     setmetatable(object, {__index = Door})
     return object
 end
 
-function Door:OnOverlap()
+function Door:OnBeginOverlap(other_entity, other_fixture, coll)
     if self.enabled then
         -- overlap logic
     end
