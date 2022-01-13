@@ -16,7 +16,7 @@ function Entity:CreateCollision(x, y, world, width, height, scale, collision_exp
     local fixture = love.physics.newFixture(body, shape)
     body:setFixedRotation(true)
     body:setUserData("entity")
-    body:setUserData(self.id)
+    -- body:setUserData(self.id)
     fixture:setSensor(collision_mode)
     self.fixture = fixture
     self:OnCollisionChanged(fixture)

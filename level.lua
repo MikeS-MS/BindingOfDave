@@ -50,19 +50,13 @@ end
 function Level:getAvailableID()
     local id = 0
 
-    repeat
-        id = math.random(10000)
-    until self.currentRoom:isIDAvailable(id)
-
-    return id
-end
-
-function Level:getAvailablePosition()
     if self.currentRoom ~= nil then
-        return true, self.currentRoom:getAvailablePosition()
+        repeat
+            id = math.random(10000)
+        until self.currentRoom:isIDAvailable(id)
     end
 
-    return false, {x = 0, y = 0}
+    return id
 end
 
 function Level:OnScaleChanged(new_scale, skip)
@@ -149,20 +143,12 @@ function Level:update(dt)
     if self.currentRoom ~= nil then
         self.currentRoom:update(dt)
     end
-
-    -- if self.persistent_player ~= nil then
-    --     self.persistent_player:update(dt)
-    -- end
 end
 
 function Level:draw()
     if self.currentRoom ~= nil then
         self.currentRoom:draw()
     end
-
-    -- if self.persistent_player ~= nil then
-    --     self.persistent_player:draw()
-    -- end
 end
 
 return Level
