@@ -1,8 +1,17 @@
-Entity = require("entity")
-Player = Entity
+local Entity = require("entity")
+Player = {}
+Player.__index = Player
+setmetatable(Player, Entity)
 
 function Player:OnCollisionChanged(fixture)
     fixture:getBody():setUserData("player")
+end
+
+function Player.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+    local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+    object.__index = Player
+    setmetatable(object, Player)
+    return object
 end
 
 function Player:OnBeginOverlap(other_entity, other_fixture, coll)

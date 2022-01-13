@@ -1,38 +1,46 @@
 Entity = {}
+Entity.__index = Entity
 
 function Entity:OnCollisionChanged(fixture)
     
 end
 
-function Entity:CreateCollision(x, y, world, width, height, scale, collision_mode)
-    local body = love.physics.newBody(
-                                      world,
-                                      x * scale.x,
-                                      y * scale.y,
-                                      'dynamic'
-                                     )
-    local shape = love.physics.newRectangleShape(width * scale.x, height * scale.y)
+function Entity:CreateCollision(x, y, world, width, height, scale, collision_expansion, collision_mode)
+    if self.fixture ~= nil then
+        local body = self.fixture:getBody()
+        body:destroy()
+    end
+    
+    local body = love.physics.newBody(world, x, y, 'dynamic')
+    local shape = love.physics.newRectangleShape((width + collision_expansion.width) * scale.x, (height + collision_expansion.height) * scale.y)
     local fixture = love.physics.newFixture(body, shape)
-    fixture:setSensor(collision_mode)
-    self:OnCollisionChanged(fixture)
-    return body, shape, fixture
-end
-
-function Entity:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, id)
-    local image = love.graphics.newImage(imagefilename)
-    local width, height = image:getWidth() + collision_expansion.width, image:getHeight() + collision_expansion.height
-    local body, shape, fixture = Entity:CreateCollision(
-                                                        x - (width / 2),
-                                                        y - (height / 2),
-                                                        world,
-                                                        width,
-                                                        height,
-                                                        global_settings.scale,
-                                                        collision_mode)
     body:setFixedRotation(true)
     body:setUserData("entity")
-    local object = {fixture = fixture, velocity = {x = 600, y = 600}, image = image, rotation = 0, global_settings = global_settings, level = level, id = id, collision_expansion = collision_expansion, collision_mode = collision_mode}
-    setmetatable(object, {__index = Entity})
+    body:setUserData(self.id)
+    fixture:setSensor(collision_mode)
+    self.fixture = fixture
+    self:OnCollisionChanged(fixture)
+    return body
+end
+
+function Entity:SetLocation(x, y)
+    self.fixture:getBody():setPosition(x, y)
+end
+
+function Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+    local image = love.graphics.newImage(imagefilename)
+    local width, height = image:getWidth(), image:getHeight()
+    local object = setmetatable({velocity = {x = 600, y = 600}, image = image, rotation = 0, global_settings = global_settings, level = level, collision_expansion = collision_expansion, collision_mode = collision_mode}, Entity)
+    local body = object:CreateCollision(
+                                        x,
+                                        y,
+                                        world,
+                                        width,
+                                        height,
+                                        global_settings.scale,
+                                        collision_expansion,
+                                        collision_mode)
+    object.id = level:getAvailableID()
     return object
 end
 
@@ -41,10 +49,6 @@ function Entity:OnBeginOverlap(other_entity, other_fixture, coll)
 end
 
 function Entity:OnScaleChanged(new_scale)
-    -- cleanup
-    local body = self.fixture:getBody()
-    self.fixture:destroy()
-
     local scale = {x = 1, y = 1}
 
     if new_scale.x ~= self.global_settings.scale.x or new_scale.y ~= self.global_settings.scale.y then
@@ -52,20 +56,16 @@ function Entity:OnScaleChanged(new_scale)
         scale.y = new_scale.y
     end
 
-    local new_body, shape, fixture = self:CreateCollision(
-                                                          body:getX(),
-                                                          body:getY(),
-                                                          self.global_settings.world,
-                                                          self.image:getWidth() + self.collision_expansion.width,
-                                                          self.image:getHeight() + self.collision_expansion.height,
-                                                          scale,
-                                                          self.collision_mode)
-    body:destroy()
+    local body = self.fixture:getBody()
+    body = self:CreateCollision(
+                                body:getX(),
+                                body:getY(),
+                                self.global_settings.world,
+                                self.image:getWidth() + self.collision_expansion.width,
+                                self.image:getHeight() + self.collision_expansion.height,
+                                scale,
+                                self.collision_mode)
 
-    self.fixture = fixture
-    body = new_body
-    body:setFixedRotation(true)
-    body:setUserData("entity")
 end
 
 function Entity:Move(vx, vy)
@@ -77,6 +77,21 @@ function Entity:getTransform()
     return {position = {x = x, y = y}, origin = {x = self.image:getWidth() / 2, y = self.image:getHeight() / 2}}
 end
 
+function Entity:getBoundingBox()
+    return {size = {width = self.image:getWidth() * self.global_settings.scale.x, height = self.image:getHeight() * self.global_settings.scale.y}}
+end
+
+function Entity:getBoundingBoxUniform()
+    local box = self:getBoundingBox()
+    local bigger_size = box.size.height
+
+    if box.size.width > box.size.height then
+        bigger_size = box.size.width
+    end
+
+    return bigger_size
+end
+
 function Entity:RotateToFacePosition(x, y)
     local transform = self:getTransform()
     local new_rot = math.atan2(x - transform.position.x, y - transform.position.y) * -1
@@ -85,7 +100,6 @@ function Entity:RotateToFacePosition(x, y)
 end
 
 function Entity:update(dt)
-
 end
 
 function Entity:draw()

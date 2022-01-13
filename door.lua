@@ -1,8 +1,8 @@
 Entity = require("entity")
 Door = Entity
 
-function Door:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, id, enabled)
-    local object = Entity:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, id)
+function Door:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, enabled)
+    local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     object.enabled = enabled
     setmetatable(object, {__index = Door})
     return object

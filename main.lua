@@ -2,7 +2,9 @@ local Player = require("Player")
 local Level = require("level")
 local gb = require("globals")
 
-DEBUG = true
+if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
+    require("lldebugger").start()
+end
 
 function love.load()
     gb:SetCallback(OnScaleChanged)
@@ -10,7 +12,7 @@ function love.load()
     gb.world = love.physics.newWorld(0, 0)
     gb.world:setCallbacks(BeginContact, EndContact, PreSolve, PostSolve)
     -- load level
-    CurrentLevel = Level:new({"data/rooms/Hub.lua"}, gb)
+    CurrentLevel = Level:new(nil, {"data/rooms/Hub.lua"}, gb)
 end
 
 function BeginContact(fa, fb, coll)
@@ -44,37 +46,15 @@ function OnScaleChanged(new_scale)
 end
 
 function love.update(dt)
-    if gb.world  ~= nil then
-        gb.world:update(dt)
-    end
-
+    gb.deltatime = dt
     if CurrentLevel ~= nil then
         CurrentLevel:update(dt)
-    end
-end
-
-function drawDebug()
-    for _, body in pairs(gb.world:getBodies()) do
-        for _, fixture in pairs(body:getFixtures()) do
-            local shape = fixture:getShape()
-            if body:getUserData("shape") then
-                love.graphics.setColor(0, 255, 0)
-            else
-                love.graphics.setColor(255, 0, 0)
-            end
- 
-            love.graphics.polygon('fill', body:getWorldPoints(shape:getPoints()))
-        end
     end
 end
 
 function love.draw()
     if CurrentLevel ~= nil then
         CurrentLevel:draw()
-    end
-
-    if DEBUG and gb.world ~= nil then
-        drawDebug()
     end
 end
 

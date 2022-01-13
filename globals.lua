@@ -1,5 +1,5 @@
 Globals = {
-    world = nil,
+    deltatime = 1,
     tile = {
         width = 32,
         height = 32
@@ -8,7 +8,8 @@ Globals = {
         x = 1,
         y = 1
     },
-    callback = nil
+    callback = nil,
+    debug = false
 }
 
 function Globals:SetCallback(callback)
