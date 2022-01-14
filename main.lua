@@ -19,6 +19,12 @@ function OnScaleChanged(new_scale)
     end
 end
 
+function love.keyreleased(key, scancode)
+    if CurrentLevel ~= nil then
+        CurrentLevel:OnKeyReleased(key, scancode)
+    end
+end
+
 function love.update(dt)
     gb.deltatime = dt
     if CurrentLevel ~= nil then
@@ -30,5 +36,9 @@ function love.draw()
     if CurrentLevel ~= nil then
         CurrentLevel:draw()
     end
+
+    gb:draw()
+
+    love.graphics.setColor(255, 255, 255)
 end
 

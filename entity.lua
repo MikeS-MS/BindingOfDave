@@ -22,10 +22,6 @@ function Entity:CreateCollision(x, y, world, width, height, scale, collision_exp
     return body
 end
 
-function Entity:SetLocation(x, y)
-    self.fixture:getBody():setPosition(x, y)
-end
-
 function Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     local image = love.graphics.newImage(imagefilename)
     local width, height = image:getWidth(), image:getHeight()
@@ -45,6 +41,20 @@ end
 
 function Entity:destroy()
     
+end
+
+function Entity:SetLocation(x, y)
+    self.fixture:getBody():setPosition(x, y)
+end
+
+function Entity:getForwardVector()
+    local angle = self.fixture:getBody():getAngle()
+    local transform = self:getTransform()
+    local magnitude = math.sqrt(math.pow(transform.position.x, 2) + math.pow(transform.position.y, 2))
+
+    return {
+        x = 0 * math.cos(angle) - 1 * math.sin(angle),
+        y = 1 * math.cos(angle) + 0 * math.sin(angle)}
 end
 
 function Entity:OnBeginOverlap(other_entity, other_fixture, coll)

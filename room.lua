@@ -6,7 +6,7 @@ Room = {}
 function Room:new(filename, level, global_settings)
     local map = sti(filename)
     local world = love.physics.newWorld(0, 0)
-    local object = {map = map, entities = {}, entitiesToDestroy = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 25}
+    local object = {map = map, entities = {}, entitiesToDestroy = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 50}
     setmetatable(object, {__index = Room})
     return object
 end
@@ -51,7 +51,7 @@ function Room:load()
     end
 end
 
-function Level:unload()
+function Room:unload()
     self.world:destroy()
     self.world = love.physics.newWorld(0, 0)
 end
@@ -75,6 +75,8 @@ function Room:activate(transitory_player)
     self.world:setCallbacks(BeginContact, EndContact, PreSolve, PostSolve)
     local enemy = Enemy.new(500, 500, self.world, "data/Player.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
     self:addEntity(enemy)
+    local enemy2 = Enemy.new(200, 200, self.world, "data/Player.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
+    self:addEntity(enemy2)
 end
 
 function Room:deactivate()
@@ -118,6 +120,87 @@ function Room:isIDAvailable(id)
         end
     end
     return true
+end
+
+function Room:rayCast(start_location, end_location, ignored_entity, single_scan)
+    local hitlist = {}
+    if self.world ~= nil then
+        local bodies = self.world:getBodies()
+
+        for _, body in pairs(bodies) do
+            for _, fixture in pairs(body:getFixtures()) do
+                local x, y, fraction = fixture:rayCast(start_location.x, start_location.y, end_location.x, end_location.y, 1)
+                local user_data = body:getUserData()
+
+                if user_data ~= nil then
+                    if user_data.id ~= ignored_entity.id then
+                        if x ~= nil and y ~= nil then
+                            x = start_location.x + (end_location.x - start_location.x) * fraction
+                            y = start_location.y + (end_location.y - start_location.y) * fraction
+                            local hit = {
+                                position = {
+                                    x = x,
+                                    y = y
+                                },
+                                distance = Utilities:getDistanceUniform(start_location, {x = x, y = y}),
+                                fixture = fixture,
+                                entity = user_data
+                            }
+                            table.insert(hitlist, hit)
+                        end
+                    end
+                else
+                    if x ~= nil and y ~= nil then
+                        x = start_location.x + (end_location.x - start_location.x) * fraction
+                        y = start_location.y + (end_location.y - start_location.y) * fraction
+                        local hit = {
+                            position = {
+                                x = x,
+                                y = y
+                            },
+                            distance = Utilities:getDistanceUniform(start_location, {x = x, y = y}),
+                            fixture = fixture,
+                            entity = nil
+                        }
+                        table.insert(hitlist, hit)
+                    end
+                end
+            end
+        end
+    end
+
+    -- sort by distance
+    table.sort(hitlist,
+    function (a, b)
+        if a.distance < b.distance then
+            return true
+        end
+        return false
+    end)
+
+    if single_scan then
+        if #hitlist > 0 then
+            hitlist = {hitlist[1]}
+        end
+    end
+
+    local start = {x = start_location.x, y = start_location.y}
+    local time = 0.02
+
+    if self.global_settings.debug then
+        for x = 1, #hitlist do
+            local hit = hitlist[x]
+            self.global_settings:drawDebugLine(start_location, hit.position, {r = 0, g = 255, b = 0}, time)
+            self.global_settings:drawDebugRectangle(hit.position, 10 * self.global_settings.scale.x, {r = 255, g = 0, b = 0}, time)
+            start.x = hit.position.x
+            start.y = hit.position.y
+        end
+
+        self.global_settings:drawDebugLine(start, end_location, {r = 255, g = 0, b = 0}, time)
+        self.global_settings:drawDebugRectangle(end_location, 10 * self.global_settings.scale.x, {r = 255, g = 0, b = 0}, time)
+    end
+
+    return hitlist
 end
 
 function Room:isPointInsideSomething(x, y, extent)
@@ -250,7 +333,7 @@ function Room:draw()
         end
     end
 
-    if self.global_settings.debug then
+    if self.global_settings.showbounds and self.global_settings.debug then
         self:drawDebug()
     end
 end

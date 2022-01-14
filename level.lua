@@ -69,6 +69,12 @@ function Level:OnScaleChanged(new_scale, skip)
     end
 end
 
+function Level:OnKeyReleased(key, scancode)
+    if self.persistent_player ~= nil then
+        self.persistent_player:OnKeyReleased(key, scancode)
+    end
+end
+
 function Level:load()
     if self.currentRoom then
         -- spawn player

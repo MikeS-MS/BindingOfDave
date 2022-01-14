@@ -13,8 +13,24 @@ function Utilities:getUnitDirection(start, target)
     return direction
 end
 
+function Utilities:AddVecWithVec(vector, vector2)
+    return {x = vector.x + vector2.x, y = vector.y + vector2.y}
+end
+
+function Utilities:MultiplyVecByNumber(vector, value)
+    return {x = vector.x * value, y = vector.y * value}
+end
+
+function Utilities:MultiplyVecByVec(vector, vector2)
+    return {x = vector.x * vector2.x, y = vector.y * vector2.y}
+end
+
 function Utilities:getDistance(start, target)
     return {x = math.abs(start.x - target.x), y = math.abs(start.y - target.y)}
+end
+
+function Utilities:getDistanceUniform(start, target)
+    return math.sqrt(math.pow(start.x - target.x, 2) + math.pow(start.y - target.y, 2))
 end
 
 function Utilities:deepcopy(orig, copies)

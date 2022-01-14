@@ -9,7 +9,6 @@ function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mo
     local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     object.__index = Enemy
     setmetatable(object, Enemy)
-    local transform = object:getTransform()
     object.room = room
     object.navigation_nodes = {}
     object.type = "enemy"
@@ -18,6 +17,7 @@ function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mo
     object.shouldMove = true
     object.velocity.x = 300
     object.velocity.y = 300
+    object.range = 600
     return object
 end
 
@@ -124,8 +124,7 @@ function Enemy:isPointBlocked(index)
 end
 
 function Enemy:getAvailablePosition()
-    local x, y = 0, 0
-    math.randomseed(os.time())
+    local x, y = 1, 1
 
     repeat
         x = math.floor(math.random(1, self.navigation_rows - 1))
@@ -180,6 +179,7 @@ function Enemy.isPointInTable(point, table)
     return false
 end
 
+-- A* Pathfinding algorithm
 function Enemy:pathFindToLocation(start_location, target_location)
     -- get closest location from nodes
     local start_location_index, target_location_index = self:getClosestNavPoint(start_location), self:getClosestNavPoint(target_location)
@@ -254,74 +254,74 @@ function Enemy:pathFindToLocation(start_location, target_location)
 end
 
 -- old pathfinding algorithm
--- function Enemy:pathFindToLocation(start_location, target_location, extent)
---     -- get closest location from nodes
---     local start_location_nav, target_location_nav = self:getClosestNavPoint(start_location), self:getClosestNavPoint(target_location)
---     local nav_points = Utilities:deepcopy(self.navigation_nodes)
---     -- change inaccessible points to blocked for the
---     local target_location_from_nav = nav_points[target_location_nav.y][target_location_nav.x].position
---     local end_points = {}
---     local current_index = {}
---     current_index.x = start_location_nav.x
---     current_index.y = start_location_nav.y
+function Enemy:pathFindToLocation2(start_location, target_location)
+    -- get closest location from nodes
+    local start_location_nav, target_location_nav = self:getClosestNavPoint(start_location), self:getClosestNavPoint(target_location)
+    local nav_points = Utilities:deepcopy(self.navigation_nodes)
+    -- change inaccessible points to blocked for the
+    local target_location_from_nav = nav_points[target_location_nav.y][target_location_nav.x].position
+    local end_points = {}
+    local current_index = {}
+    current_index.x = start_location_nav.x
+    current_index.y = start_location_nav.y
 
---     repeat
---         local points = {}
+    repeat
+        local points = {}
 
---         -- left point
---         if current_index.x  - 1 > 0 then
---             local success, point = Enemy.makePoint(current_index.x - 1, current_index.y, nav_points, target_location_from_nav)
---             if success then
---                 table.insert(points, point)
---             end
---         end
+        -- left point
+        if current_index.x  - 1 > 0 then
+            local success, point = Enemy.makePoint(current_index.x - 1, current_index.y, nav_points, target_location_from_nav)
+            if success then
+                table.insert(points, point)
+            end
+        end
 
---         -- top point
---         if current_index.y - 1 > 0 then
---             local success, point = Enemy.makePoint(current_index.x, current_index.y - 1, nav_points, target_location_from_nav)
---             if success then
---                 table.insert(points, point)
---             end
---         end
+        -- top point
+        if current_index.y - 1 > 0 then
+            local success, point = Enemy.makePoint(current_index.x, current_index.y - 1, nav_points, target_location_from_nav)
+            if success then
+                table.insert(points, point)
+            end
+        end
 
---         -- right point
---         if current_index.x + 1 < self.navigation_rows - 1 then
---             local success, point = Enemy.makePoint(current_index.x + 1, current_index.y, nav_points, target_location_from_nav)
---             if success then
---                 table.insert(points, point)
---             end
---         end
+        -- right point
+        if current_index.x + 1 < self.navigation_rows - 1 then
+            local success, point = Enemy.makePoint(current_index.x + 1, current_index.y, nav_points, target_location_from_nav)
+            if success then
+                table.insert(points, point)
+            end
+        end
 
---         -- bottom point
---         if current_index.y + 1 < self.navigation_columns - 1 then
---             local success, point = Enemy.makePoint(current_index.x, current_index.y + 1, nav_points, target_location_from_nav)
---             if success then
---                 table.insert(points, point)
---             end
---         end
+        -- bottom point
+        if current_index.y + 1 < self.navigation_columns - 1 then
+            local success, point = Enemy.makePoint(current_index.x, current_index.y + 1, nav_points, target_location_from_nav)
+            if success then
+                table.insert(points, point)
+            end
+        end
 
---         -- get closest by distance
---         local distance = {x = 1000000, y = 1000000}
---         local point_pos = {x = target_location_from_nav.x, y = target_location_from_nav.y}
---         local index = {x = target_location_nav.x, y = target_location_nav.y}
+        -- get closest by distance
+        local distance = {x = 1000000, y = 1000000}
+        local point_pos = {x = target_location_from_nav.x, y = target_location_from_nav.y}
+        local index = {x = target_location_nav.x, y = target_location_nav.y}
         
---         for __, point in pairs(points) do
---             if point.distance.x < distance.x or point.distance.y < distance.y then
---                 distance = point.distance
---                 point_pos.x = point.position.x
---                 point_pos.y = point.position.y
---                 index.x = point.index.x
---                 index.y = point.index.y
---             end
---         end
+        for __, point in pairs(points) do
+            if point.distance.x < distance.x or point.distance.y < distance.y then
+                distance = point.distance
+                point_pos.x = point.position.x
+                point_pos.y = point.position.y
+                index.x = point.index.x
+                index.y = point.index.y
+            end
+        end
 
---         current_index.x = index.x
---         current_index.y = index.y
---         table.insert(end_points, point_pos)
---     until current_index.x == target_location_nav.x and current_index.y == target_location_nav.y
+        current_index.x = index.x
+        current_index.y = index.y
+        table.insert(end_points, point_pos)
+    until current_index.x == target_location_nav.x and current_index.y == target_location_nav.y
 
---     return end_points
--- end
+    return end_points
+end
 
 function Enemy.makePoint(x, y, nav_points, target_location_from_nav)
     local point = {}
@@ -344,52 +344,73 @@ function Enemy:getPatrolLocations()
     local transform = self:getTransform()
     local position = self:getAvailablePosition()
     self.positions = self:pathFindToLocation(transform.position, position)
-    if position ~= nil then
+
+    if position ~= nil and self.positions ~= nil then
         self.position = self.positions[1]
         self.pos_index = 1
-    end
-end
+        -- draw debug for paths
+        if self.level.global_settings.debug then
+            for x = 1, #self.positions do
+                local nav_position = self.positions[x]
+                local color = {r = 255, g = 255, b = 0}
 
-function Enemy:update(dt)
-    if self.shouldMove then
-        local transform = self:getTransform()
-        local point_size = self.room.navigation_nodes_density
-
-        if #self.positions ~= 0 then
-            if not Utilities:pointInRectangle({x = transform.position.x, y = transform.position.y}, {left = self.position.x - point_size / 2, right = self.position.x + point_size / 2, top = self.position.y - point_size / 2, bottom = self.position.y + point_size / 2}) then
-                local direction = Utilities:getUnitDirection(transform.position, self.position)
-                self:RotateToFacePosition(self.position.x , self.position.y)
-                self:Move(self.velocity.x * direction.x, self.velocity.y * direction.y)
-            else
-                self.pos_index = self.pos_index + 1
-                if self.positions[self.pos_index] then
-                    self.position = self.positions[self.pos_index]
-                else
-                    self:getPatrolLocations()
+                if x == #self.positions then
+                    color = {r = 0, g = 255, b = 0}
                 end
+
+                self.level.global_settings:drawDebugRectangle(nav_position, 10, color, 2)
             end
-        else
-            self:getPatrolLocations()
         end
     end
 end
 
--- function Enemy:draw()
---     love.graphics.setColor(255, 255, 255)
---     local transform = self:getTransform()
---     love.graphics.draw(self.image, transform.position.x, transform.position.y, self.rotation, self.global_settings.scale.x, self.global_settings.scale.y, transform.origin.x, transform.origin.y)
+function Enemy:spotPlayer()
+    local transform = self:getTransform()
+    local forward_vector = self:getForwardVector()
+    local end_pos = Utilities:AddVecWithVec(transform.position, Utilities:MultiplyVecByNumber(forward_vector, self.range * self.level.global_settings.scale.x))
+    local hitresults = self.room:rayCast(transform.position, end_pos, self, true)
+    self.found_player = false
+    self.shouldMove = true
 
---     local point_size = 5
---     for x = 1, #self.positions do
---         local point = self.positions[x]
---         if x < #self.positions then
---             love.graphics.setColor(255, 255, 0)
---         else
---             love.graphics.setColor(0, 255, 0)
---         end
---         love.graphics.rectangle('fill', point.x - point_size / 2, point.y - point_size / 2, point_size, point_size)
---     end
---     love.graphics.setColor(255, 255, 255)
--- end
+    for _, hit in pairs(hitresults) do
+        if hit.entity ~= nil then
+            if hit.entity.type == "player" then
+                self.found_player = true
+                self.shouldMove = false
+            end
+        end
+    end
+end
+
+function Enemy:update(dt)
+    self:Move(0, 0)
+    self:spotPlayer()
+    if self.shouldMove then
+        local transform = self:getTransform()
+        local point_size = self.room.navigation_nodes_density
+
+        if self.positions ~= nil then
+            if #self.positions ~= 0 then
+                if not Utilities:pointInRectangle({x = transform.position.x, y = transform.position.y}, {left = self.position.x - point_size / 2, right = self.position.x + point_size / 2, top = self.position.y - point_size / 2, bottom = self.position.y + point_size / 2}) then
+                    local direction = Utilities:getUnitDirection(transform.position, self.position)
+                    self:RotateToFacePosition(self.position.x , self.position.y)
+                    self:Move(self.velocity.x * direction.x, self.velocity.y * direction.y)
+                else
+                    self.pos_index = self.pos_index + 1
+                    if self.positions[self.pos_index] then
+                        self.position = self.positions[self.pos_index]
+                    else
+                        self:getPatrolLocations()
+                    end
+                end
+            else
+                self:getPatrolLocations()
+            end
+        end
+    elseif self.found_player then
+        local playerTransform = self.level.persistent_player:getTransform()
+        self:RotateToFacePosition(playerTransform.position.x, playerTransform.position.y)
+    end
+end
 
 return Enemy
