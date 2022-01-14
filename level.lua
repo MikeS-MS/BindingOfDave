@@ -105,40 +105,6 @@ function Level:spawnMapCollisions()
         CollisionManager:createCollisionObject(0, height, width, 100, self.global_settings.world)
 end
 
-function Level:BeginContact(fa, fb, coll)
-    local fab, fbb = fa:getBody(), fb:getBody()
-    local entity_a, entity_b = nil, nil
-
-    for __, entity in pairs(self.entities) do
-        if fab:getUserData("entity") and fab:getUserData(entity.id) then
-            entity_a = entity
-        end
-        if fbb:getUserData("entity") and fbb:getUserData(entity.id) then
-            entity_b = entity
-        end
-    end
-
-    if entity_a ~= nil then
-        entity_a:OnBeginOverlap(entity_b, fab, coll)
-    end
-
-    if entity_b ~= nil then
-        entity_b:OnBeginOverlap(entity_a, fbb, coll)
-    end
-end
-
-function Level:EndContact(fa, fb, coll)
-
-end
-
-function Level:PreSolve(fa, fb, coll)
-
-end
-
-function Level:PostSolve(fa, fb, coll, normalimpulse, tangentimpulse)
-
-end
-
 function Level:update(dt)
     if self.currentRoom ~= nil then
         self.currentRoom:update(dt)

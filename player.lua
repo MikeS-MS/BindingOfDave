@@ -4,18 +4,19 @@ Player.__index = Player
 setmetatable(Player, Entity)
 
 function Player:OnCollisionChanged(fixture)
-    fixture:getBody():setUserData("player")
+
 end
 
 function Player.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     object.__index = Player
     setmetatable(object, Player)
+    object.type = "player"
     return object
 end
 
 function Player:OnBeginOverlap(other_entity, other_fixture, coll)
-    
+    print("bruh")
 end
 
 function Player:update(dt)

@@ -45,4 +45,14 @@ function Utilities:pointInRectangle(point, rectangle)
     return false
 end
 
+function Utilities:reverseTable(old_table)
+    local new_table = {}
+    for x = #old_table, 1, -1 do
+        local value = old_table[x]
+        table.insert(new_table, value)
+    end
+
+    return new_table
+end
+
 return Utilities

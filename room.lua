@@ -6,7 +6,7 @@ Room = {}
 function Room:new(filename, level, global_settings)
     local map = sti(filename)
     local world = love.physics.newWorld(0, 0)
-    local object = {map = map, entities = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 50}
+    local object = {map = map, entities = {}, entitiesToDestroy = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 25}
     setmetatable(object, {__index = Room})
     return object
 end
@@ -72,7 +72,7 @@ function Room:activate(transitory_player)
             table.insert(self.entities, transitory_player)
         end
     end
-
+    self.world:setCallbacks(BeginContact, EndContact, PreSolve, PostSolve)
     local enemy = Enemy.new(500, 500, self.world, "data/Player.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
     self:addEntity(enemy)
 end
@@ -152,9 +152,69 @@ function Room:OnScaleChanged(new_scale)
     end
 end
 
+function Room:doesEntityExistInRoom(entity)
+    if entity ~= nil then
+        for x = 1, #self.entities do
+            local e = self.entities[x]
+            if e.id == entity.id then
+                return true, x
+            end
+        end
+    end
+    return false
+end
+
+function Room:markForDestruction(entity)
+    if entity ~= nil then
+        local success, index = self:doesEntityExistInRoom(entity)
+        if success then
+            table.insert(self.entitiesToDestroy, index)
+        end
+    end
+end
+
+function Room:destroyEntities()
+    for _, index in pairs(self.entitiesToDestroy) do
+        local entity = self.entities[index]
+        local body = entity.fixture:getBody()
+        body:destroy()
+        table.remove(self.entities, index)
+    end
+    self.entitiesToDestroy = {}
+    collectgarbage("collect")
+end
+
+function BeginContact(fa, fb, coll)
+    local fab, fbb = fa:getBody(), fb:getBody()
+    local fab_data, fbb_data = fab:getUserData(), fbb:getUserData()
+
+    if fab_data ~= nil then
+        if type(fab_data) == "table" then
+            fab_data:OnBeginOverlap(fbb_data, fbb, coll)
+        end
+    end
+    if fbb_data ~= nil then
+        if type(fbb_data) == "table" then
+            fbb_data:OnBeginOverlap(fab_data, fab, coll)
+        end
+    end
+end
+
+function EndContact(fa, fb, coll)
+
+end
+
+function PreSolve(fa, fb, coll)
+
+end
+
+function PostSolve(fa, fb, coll, normalimpulse, tangentimpulse)
+
+end
+
 function Room:update(dt)
     self.map:update(dt)
-
+    self:destroyEntities()
     for _, entity in pairs(self.entities) do
         if entity ~= nil then
             entity:update(dt)
@@ -177,15 +237,6 @@ function Room:drawDebug()
             end
  
             love.graphics.polygon('fill', body:getWorldPoints(shape:getPoints()))
-        end
-    end
-    local point_size = 5
-    love.graphics.setColor(255, 255, 0)
-    for __, row in pairs(self.navigation_nodes) do
-        for _x, node in pairs(row) do
-            if not node.blocked then
-                love.graphics.rectangle('fill', node.position.x - point_size / 2, node.position.y - point_size / 2, point_size, point_size)
-            end
         end
     end
 end

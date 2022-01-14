@@ -15,8 +15,7 @@ function Entity:CreateCollision(x, y, world, width, height, scale, collision_exp
     local shape = love.physics.newRectangleShape((width + collision_expansion.width) * scale.x, (height + collision_expansion.height) * scale.y)
     local fixture = love.physics.newFixture(body, shape)
     body:setFixedRotation(true)
-    body:setUserData("entity")
-    -- body:setUserData(self.id)
+    body:setUserData(self)
     fixture:setSensor(collision_mode)
     self.fixture = fixture
     self:OnCollisionChanged(fixture)
@@ -42,6 +41,10 @@ function Entity.new(x, y, world, imagefilename, collision_expansion, collision_m
                                         collision_mode)
     object.id = level:getAvailableID()
     return object
+end
+
+function Entity:destroy()
+    
 end
 
 function Entity:OnBeginOverlap(other_entity, other_fixture, coll)
