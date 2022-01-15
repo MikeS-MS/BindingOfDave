@@ -19,13 +19,13 @@ function Projectile:destroy()
     self.room:markForDestruction(self)
 end
 
-function Projectile:OnBeginOverlap(other_entity, other_fixture, coll)
+function Projectile:OnBeginOverlap(this_fixture, other_entity, other_fixture, coll)
     if other_entity ~= nil then
         if other_entity.type == "player" then
             print("bonk")
             self.room:markForDestruction(self)
         end
-    else
+    elseif not other_fixture:isSensor() then
         self.room:markForDestruction(self)
     end
 end

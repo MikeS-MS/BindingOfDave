@@ -14,10 +14,11 @@ function Player.new(x, y, world, imagefilename, collision_expansion, collision_m
     object.type = "player"
     object.canShowBounds = true
     object.canDebug = true
+    object.canSwitchRoom = true
     return object
 end
 
-function Player:OnBeginOverlap(other_entity, other_fixture, coll)
+function Player:OnBeginOverlap(this_fixture, other_entity, other_fixture, coll)
 
 end
 
@@ -27,6 +28,9 @@ function Player:OnKeyReleased(key, scancode)
     end
     if key == "2" then
         self.canShowBounds = true
+    end
+    if key == "q" or key == "e" then
+        self.canSwitchRoom = true
     end
 end
 
@@ -45,6 +49,18 @@ function Player:update(dt)
             self.level.global_settings.showbounds = not self.level.global_settings.showbounds
         end
         self.canShowBounds = false
+    end
+    if love.keyboard.isDown("q") then
+        if self.canSwitchRoom then
+            self.level:setCurrentRoom(self.level.rooms[2])
+            self.canSwitchRoom = false
+        end
+    end
+    if love.keyboard.isDown("e") then
+        if self.canSwitchRoom then
+            self.level:setCurrentRoom(self.level.rooms[1])
+            self.canSwitchRoom = false
+        end
     end
     if love.keyboard.isDown('a') then
         velocity.x = self.velocity.x * -1

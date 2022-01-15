@@ -12,42 +12,46 @@ function Room:new(filename, level, global_settings)
 end
 
 function Room:load()
-    local layers = self.map.layers
-    -- setup objects from map layers
-    for x = 1, #layers do
-        local layer = layers[x]
+    if not self.loaded then
+        local layers = self.map.layers
+        -- setup objects from map layers
+        for x = 1, #layers do
+            local layer = layers[x]
 
-        if layer.name == "Collisions" then
-            local objects = layer.objects
+            if layer.name == "Collisions" then
+                local objects = layer.objects
 
-            for y = 1, #objects do
-                local object = objects[y]
+                for y = 1, #objects do
+                    local object = objects[y]
 
-                if object.visible then
-                    CollisionManager:createCollisionObject(
-                        object.x * self.global_settings.scale.x,
-                        object.y * self.global_settings.scale.y,
-                        object.width * self.global_settings.scale.x,
-                        object.height * self.global_settings.scale.y,
-                        self.world,
-                        'static'
-                    )
+                    if object.visible then
+                        CollisionManager:createCollisionObject(
+                            object.x * self.global_settings.scale.x,
+                            object.y * self.global_settings.scale.y,
+                            object.width * self.global_settings.scale.x,
+                            object.height * self.global_settings.scale.y,
+                            self.world,
+                            'static'
+                        )
+                    end
+                end
+            end
+
+            if layer.name == "SpawnLocations" then
+                local objects = layer.objects
+
+                for y = 1, #objects do
+                    local object = objects[y]
+
+                    if object.properties.type == "player" then
+                        self.spawn_location.x = object.x * self.global_settings.scale.x
+                        self.spawn_location.y = object.y * self.global_settings.scale.y
+                    end
                 end
             end
         end
 
-        if layer.name == "SpawnLocations" then
-            local objects = layer.objects
-
-            for y = 1, #objects do
-                local object = objects[y]
-
-                if object.properties.type == "player" then
-                    self.spawn_location.x = object.x * self.global_settings.scale.x
-                    self.spawn_location.y = object.y * self.global_settings.scale.y
-                end
-            end
-        end
+        self.loaded = true
     end
 end
 
@@ -73,19 +77,25 @@ function Room:activate(transitory_player)
         end
     end
     self.world:setCallbacks(BeginContact, EndContact, PreSolve, PostSolve)
-    local enemy = Enemy.new(500, 500, self.world, "data/Player.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
-    self:addEntity(enemy)
-    local enemy2 = Enemy.new(200, 200, self.world, "data/Player.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
-    self:addEntity(enemy2)
+    if not self.spawned then
+        local enemy = Enemy.new(500, 500, self.world, "data/Enemy.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
+        self:addEntity(enemy)
+        local enemy2 = Enemy.new(200, 200, self.world, "data/Enemy.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
+        self:addEntity(enemy2)
+        self.spawned = true
+    end
 end
 
 function Room:deactivate()
-    for __, entity in self.entities do
+    for x = 1, #self.entities do
+        local entity = self.entities[x]
         local body = entity.fixture:getBody()
-
-        if body:getUserData("player") then
-            table.remove(self.entities, entity)
-            break
+        local user_data = body:getUserData()
+        if user_data ~= nil then
+            if user_data.type == "player" then
+                table.remove(self.entities, x)
+                break
+            end
         end
     end
 end
@@ -122,7 +132,7 @@ function Room:isIDAvailable(id)
     return true
 end
 
-function Room:rayCast(start_location, end_location, ignored_entity, single_scan, ignored_type)
+function Room:rayCast(start_location, end_location, ignored_entity, single_scan, ignored_types)
     local hitlist = {}
     if self.world ~= nil then
         local bodies = self.world:getBodies()
@@ -134,7 +144,16 @@ function Room:rayCast(start_location, end_location, ignored_entity, single_scan,
 
                 if user_data ~= nil then
                     if user_data.id ~= ignored_entity.id then
-                        if x ~= nil and y ~= nil and user_data.type ~= ignored_type then
+                        local proceed = true
+
+                        for _, type in pairs(ignored_types) do
+                            if user_data.type == type then
+                                proceed = false
+                                break
+                            end
+                        end
+
+                        if x ~= nil and y ~= nil and proceed then
                             x = start_location.x + (end_location.x - start_location.x) * fraction
                             y = start_location.y + (end_location.y - start_location.y) * fraction
                             local hit = {
@@ -272,19 +291,31 @@ function BeginContact(fa, fb, coll)
     local fab_data, fbb_data = fab:getUserData(), fbb:getUserData()
 
     if fab_data ~= nil then
-        if type(fab_data) == "table" then
-            fab_data:OnBeginOverlap(fbb_data, fbb, coll)
+        if fab_data.type then
+            fab_data:OnBeginOverlap(fa, fbb_data, fb, coll)
         end
     end
     if fbb_data ~= nil then
-        if type(fbb_data) == "table" then
-            fbb_data:OnBeginOverlap(fab_data, fab, coll)
+        if fbb_data.type then
+            fbb_data:OnBeginOverlap(fb, fab_data, fa, coll)
         end
     end
 end
 
 function EndContact(fa, fb, coll)
+    local fab, fbb = fa:getBody(), fb:getBody()
+    local fab_data, fbb_data = fab:getUserData(), fbb:getUserData()
 
+    if fab_data ~= nil then
+        if fab_data.type then
+            fab_data:OnEndOverlap(fa, fbb_data, fb, coll)
+        end
+    end
+    if fbb_data ~= nil then
+        if fbb_data.type then
+            fbb_data:OnEndOverlap(fb, fab_data, fa, coll)
+        end
+    end
 end
 
 function PreSolve(fa, fb, coll)
@@ -313,8 +344,17 @@ function Room:drawDebug()
     for _, body in pairs(self.world:getBodies()) do
         for _, fixture in pairs(body:getFixtures()) do
             local shape = fixture:getShape()
-            if body:getUserData("shape") then
-                love.graphics.setColor(0, 255, 0)
+            local data = body:getUserData()
+            if data then
+                if data.type == "enemy" then
+                    if not fixture:isSensor() then
+                        love.graphics.setColor(love.math.colorFromBytes(0, 255, 0))
+                    else
+                        love.graphics.setColor(love.math.colorFromBytes(0, 255, 255))
+                    end
+                elseif data.type == "player" then
+                    love.graphics.setColor(love.math.colorFromBytes(0, 255, 0))
+                end
             else
                 love.graphics.setColor(255, 0, 0)
             end

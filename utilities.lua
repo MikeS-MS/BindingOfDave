@@ -33,6 +33,18 @@ function Utilities:getDistanceUniform(start, target)
     return math.sqrt(math.pow(start.x - target.x, 2) + math.pow(start.y - target.y, 2))
 end
 
+function Utilities:rotateVectorByAngleDeg(vector, angle)
+    angle = angle * (math.pi / 180)
+    return self:rotateVectorByAngleRad(vector, angle)
+end
+
+function Utilities:rotateVectorByAngleRad(vector, angle)
+    return {
+        x = vector.x * math.cos(angle) - vector.y * math.sin(angle),
+        y = vector.y * math.cos(angle) + vector.x * math.sin(angle)
+    }
+end
+
 function Utilities:deepcopy(orig, copies)
     copies = copies or {}
     local orig_type = type(orig)

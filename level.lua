@@ -1,9 +1,9 @@
-Level = {}
-
 local sti = require("sti")
 local CollisionManager = require("collision")
 local Room = require("room")
 local Player = require("player")
+
+Level = {}
 
 
 function Level:new(level_file, room_files, global_settings)
@@ -33,7 +33,6 @@ function Level:setCurrentRoom(room, first)
     scale.y = height / (room.map.height * self.global_settings.tile.height)
 
     self.global_settings:OnScaleChangedCallback(scale)
-
     if first then
         self:OnScaleChanged(scale, true)
     end
@@ -42,6 +41,7 @@ function Level:setCurrentRoom(room, first)
     self.global_settings.scale.y = scale.y
 
     self.currentRoom:load()
+
     if not first then
         self.currentRoom:activate(self.persistent_player)
     end

@@ -19,10 +19,12 @@ function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mo
     object.canShoot = true
     object.time_shot = 0
     object.shoot_cd = 3
-    object.velocity.x = 300
-    object.velocity.y = 300
-    object.playerLocation = {x = 0, y = 0}
-    object.range = 800
+    object.default_velocity.x = 300
+    object.default_velocity.y = 300
+    object:updateVelocity(global_settings.scale)
+    object.range = 1200 * global_settings.scale.x
+    object.fov = 60
+    object:spawnView()
     return object
 end
 
@@ -30,8 +32,37 @@ function Enemy:destroy()
     self.room:markForDestruction(self)
 end
 
-function Enemy:OnBeginOverlap(other_entity, other_body, coll)
-    self:getPatrolLocations()
+function Enemy:OnBeginOverlap(this_fixture, other_entity, other_fixture, coll)
+    if this_fixture:isSensor() then
+        if other_entity ~= nil then
+            if other_entity.type == "player" then
+                self.found_player = true
+                self.shouldMove = false
+            end
+        end
+    elseif not other_fixture:isSensor() then
+        self:getPatrolLocations()
+    end
+end
+
+function Enemy:OnEndOverlap(this_fixture, other_entity, other_fixture, coll)
+    if this_fixture:isSensor() then
+        if other_entity ~= nil then
+            if other_entity.type == "player" then
+                self.found_player = false
+                self.shouldMove = true
+            end
+        end
+    end
+end
+
+function Enemy:spawnView()
+    local body = self.fixture:getBody()
+    local right = Utilities:MultiplyVecByNumber(Utilities:rotateVectorByAngleDeg(self:getForwardVector(), self.fov/2), self.range)
+    local left = Utilities:MultiplyVecByNumber(Utilities:rotateVectorByAngleDeg(self:getForwardVector(), -self.fov/2), self.range)
+    local view_shape = love.physics.newPolygonShape(0, 0, left.x, left.y, right.x, right.y)
+    local fixture = love.physics.newFixture(body, view_shape)
+    fixture:setSensor(true)
 end
 
 function Enemy:spawnNavigation()
@@ -353,14 +384,15 @@ function Enemy:getPatrolLocations()
     if position ~= nil and self.positions ~= nil then
         self.position = self.positions[1]
         self.pos_index = 1
+
         -- draw debug for paths
         if self.level.global_settings.debug then
             for x = 1, #self.positions do
                 local nav_position = self.positions[x]
-                local color = {r = 255, g = 255, b = 0}
+                local color = {r = 1, g = 1, b = 0}
 
                 if x == #self.positions then
-                    color = {r = 0, g = 255, b = 0}
+                    color = {r = 0, g = 1, b = 0}
                 end
 
                 self.level.global_settings:drawDebugRectangle(nav_position, 10, color, 2)
@@ -369,28 +401,26 @@ function Enemy:getPatrolLocations()
     end
 end
 
-function Enemy:spotPlayer()
+function Enemy:spotPlayer(player_pos)
     local transform = self:getTransform()
-    local forward_vector = self:getForwardVector()
-    local end_pos = Utilities:AddVecWithVec(transform.position, Utilities:MultiplyVecByNumber(forward_vector, self.range * self.level.global_settings.scale.x))
-    local hitresults = self.room:rayCast(transform.position, end_pos, self, true, "projectile")
-    self.found_player = false
+    local hitresults = self.room:rayCast(transform.position, player_pos, self, true, {"projectile", "enemy"})
     self.shouldMove = true
-
+    
     for _, hit in pairs(hitresults) do
         if hit.entity ~= nil then
             if hit.entity.type == "player" then
-                self.found_player = true
                 self.shouldMove = false
+                return true
             end
         end
     end
+    return false
 end
 
 function Enemy:shoot(position)
     if self.canShoot then
         local transform = self:getTransform()
-        local projectile = Projectile.new(transform.position.x, transform.position.y, position.x, position.y, self.room.world, "data/Player.png", {width = 0, height = 0}, true, self.global_settings, self.level, self.room)
+        local projectile = Projectile.new(transform.position.x, transform.position.y, position.x, position.y, self.room.world, "data/Projectile.png", {width = 0, height = 0}, true, self.global_settings, self.level, self.room)
         self.room:addEntityToList(projectile)
         self.time_shot = love.timer.getTime()
         self.canShoot = false
@@ -399,7 +429,6 @@ end
 
 function Enemy:update(dt)
     self:Move(0, 0)
-    self:spotPlayer()
 
     if not self.canShoot then
         if love.timer.getTime() >= self.time_shot + self.shoot_cd then
@@ -429,10 +458,13 @@ function Enemy:update(dt)
                 self:getPatrolLocations()
             end
         end
-    elseif self.found_player then
+    end
+    if self.found_player then
         local playerTransform = self.level.persistent_player:getTransform()
-        self:RotateToFacePosition(playerTransform.position.x, playerTransform.position.y)
-        self:shoot(playerTransform.position)
+        if self:spotPlayer(playerTransform.position) then
+            self:RotateToFacePosition(playerTransform.position.x, playerTransform.position.y)
+            self:shoot(playerTransform.position)
+        end
     end
 end
 

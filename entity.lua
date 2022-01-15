@@ -25,7 +25,7 @@ end
 function Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     local image = love.graphics.newImage(imagefilename)
     local width, height = image:getWidth(), image:getHeight()
-    local object = setmetatable({velocity = {x = 600, y = 600}, image = image, rotation = 0, global_settings = global_settings, level = level, collision_expansion = collision_expansion, collision_mode = collision_mode}, Entity)
+    local object = setmetatable({default_velocity = {x = 600, y = 600}, velocity = {x = 600 * global_settings.scale.x, y = 600 * global_settings.scale.y}, image = image, rotation = 0, global_settings = global_settings, level = level, collision_expansion = collision_expansion, collision_mode = collision_mode}, Entity)
     local body = object:CreateCollision(
                                         x,
                                         y,
@@ -57,8 +57,17 @@ function Entity:getForwardVector()
         y = 1 * math.cos(angle) + 0 * math.sin(angle)}
 end
 
-function Entity:OnBeginOverlap(other_entity, other_fixture, coll)
+function Entity:OnBeginOverlap(this_fixture, other_entity, other_fixture, coll)
 
+end
+
+function Entity:OnEndOverlap(this_fixture, other_entity, other_fixture, coll)
+
+end
+
+function Entity:updateVelocity(scale)
+    self.velocity.x = self.default_velocity.x * scale.x
+    self.velocity.y = self.default_velocity.y * scale.y
 end
 
 function Entity:OnScaleChanged(new_scale)
@@ -69,14 +78,17 @@ function Entity:OnScaleChanged(new_scale)
         scale.y = new_scale.y
     end
 
+    self:updateVelocity(scale)
+
     local body = self.fixture:getBody()
     body = self:CreateCollision(
                                 body:getX(),
                                 body:getY(),
-                                self.global_settings.world,
+                                self.level.currentRoom.world,
                                 self.image:getWidth() + self.collision_expansion.width,
                                 self.image:getHeight() + self.collision_expansion.height,
                                 scale,
+                                {width = 0, height = 0},
                                 self.collision_mode)
 
 end

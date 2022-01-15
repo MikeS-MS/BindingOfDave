@@ -1,4 +1,3 @@
-local Player = require("Player")
 local Level = require("level")
 local gb = require("globals")
 
@@ -8,9 +7,12 @@ end
 
 function love.load()
     gb:SetCallback(OnScaleChanged)
-    love.physics.setMeter(32)
+    love.physics.setMeter(gb.tile.width)
     -- load level
-    CurrentLevel = Level:new(nil, {"data/rooms/Hub.lua"}, gb)
+    CurrentLevel = Level:new(nil, {
+        "data/rooms/4xPillarsCorners.lua",
+        "data/rooms/1xPillarMiddle.lua"
+    }, gb)
 end
 
 function OnScaleChanged(new_scale)
@@ -36,9 +38,6 @@ function love.draw()
     if CurrentLevel ~= nil then
         CurrentLevel:draw()
     end
-
     gb:draw()
-
-    love.graphics.setColor(255, 255, 255)
+    love.graphics.setColor(1, 1, 1)
 end
-
