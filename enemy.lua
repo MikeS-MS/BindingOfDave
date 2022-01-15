@@ -1,4 +1,5 @@
 local Entity = require("entity")
+local Projectile = require("projectile")
 local Utilities = require("utilities")
 
 Enemy = {}
@@ -15,9 +16,13 @@ function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mo
     object:spawnNavigation()
     object:getPatrolLocations()
     object.shouldMove = true
+    object.canShoot = true
+    object.time_shot = 0
+    object.shoot_cd = 3
     object.velocity.x = 300
     object.velocity.y = 300
-    object.range = 600
+    object.playerLocation = {x = 0, y = 0}
+    object.range = 800
     return object
 end
 
@@ -368,7 +373,7 @@ function Enemy:spotPlayer()
     local transform = self:getTransform()
     local forward_vector = self:getForwardVector()
     local end_pos = Utilities:AddVecWithVec(transform.position, Utilities:MultiplyVecByNumber(forward_vector, self.range * self.level.global_settings.scale.x))
-    local hitresults = self.room:rayCast(transform.position, end_pos, self, true)
+    local hitresults = self.room:rayCast(transform.position, end_pos, self, true, "projectile")
     self.found_player = false
     self.shouldMove = true
 
@@ -382,9 +387,26 @@ function Enemy:spotPlayer()
     end
 end
 
+function Enemy:shoot(position)
+    if self.canShoot then
+        local transform = self:getTransform()
+        local projectile = Projectile.new(transform.position.x, transform.position.y, position.x, position.y, self.room.world, "data/Player.png", {width = 0, height = 0}, true, self.global_settings, self.level, self.room)
+        self.room:addEntityToList(projectile)
+        self.time_shot = love.timer.getTime()
+        self.canShoot = false
+    end
+end
+
 function Enemy:update(dt)
     self:Move(0, 0)
     self:spotPlayer()
+
+    if not self.canShoot then
+        if love.timer.getTime() >= self.time_shot + self.shoot_cd then
+            self.canShoot = true
+        end
+    end
+
     if self.shouldMove then
         local transform = self:getTransform()
         local point_size = self.room.navigation_nodes_density
@@ -410,6 +432,7 @@ function Enemy:update(dt)
     elseif self.found_player then
         local playerTransform = self.level.persistent_player:getTransform()
         self:RotateToFacePosition(playerTransform.position.x, playerTransform.position.y)
+        self:shoot(playerTransform.position)
     end
 end
 

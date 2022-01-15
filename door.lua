@@ -1,10 +1,13 @@
-Entity = require("entity")
-Door = Entity
+local Entity = require("entity")
+Door = {}
+Door.__index = Door
+setmetatable(Door, Entity)
 
 function Door:new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, enabled)
     local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+    object.__index = Door
+    setmetatable(object, Door)
     object.enabled = enabled
-    setmetatable(object, {__index = Door})
     return object
 end
 

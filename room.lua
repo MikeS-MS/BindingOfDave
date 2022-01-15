@@ -122,7 +122,7 @@ function Room:isIDAvailable(id)
     return true
 end
 
-function Room:rayCast(start_location, end_location, ignored_entity, single_scan)
+function Room:rayCast(start_location, end_location, ignored_entity, single_scan, ignored_type)
     local hitlist = {}
     if self.world ~= nil then
         local bodies = self.world:getBodies()
@@ -134,7 +134,7 @@ function Room:rayCast(start_location, end_location, ignored_entity, single_scan)
 
                 if user_data ~= nil then
                     if user_data.id ~= ignored_entity.id then
-                        if x ~= nil and y ~= nil then
+                        if x ~= nil and y ~= nil and user_data.type ~= ignored_type then
                             x = start_location.x + (end_location.x - start_location.x) * fraction
                             y = start_location.y + (end_location.y - start_location.y) * fraction
                             local hit = {

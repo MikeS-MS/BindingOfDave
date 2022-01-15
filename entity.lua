@@ -10,7 +10,7 @@ function Entity:CreateCollision(x, y, world, width, height, scale, collision_exp
         local body = self.fixture:getBody()
         body:destroy()
     end
-    
+
     local body = love.physics.newBody(world, x, y, 'dynamic')
     local shape = love.physics.newRectangleShape((width + collision_expansion.width) * scale.x, (height + collision_expansion.height) * scale.y)
     local fixture = love.physics.newFixture(body, shape)
