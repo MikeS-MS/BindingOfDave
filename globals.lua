@@ -15,6 +15,16 @@ Globals = {
     showbounds = false
 }
 
+function Globals:SetRestartCallback(callback)
+    self.restart_callback = callback
+end
+
+function Globals:Restart()
+    if self.restart_callback ~= nil then
+        self.restart_callback()
+    end
+end
+
 function Globals:SetCallback(callback)
     self.callback = callback
 end
@@ -50,7 +60,7 @@ function Globals:draw()
     for x = 1, #self.debugRectangles do
         local rectangle = self.debugRectangles[x]
         if love.timer.getTime() < rectangle.time + rectangle.timeToStay and self.debug then
-            love.graphics.setColor(rectangle.color.r, rectangle.color.g, rectangle.color.b)
+            love.graphics.setColor(love.math.colorFromBytes(rectangle.color.r, rectangle.color.g, rectangle.color.b))
             love.graphics.rectangle('fill', rectangle.position.x - rectangle.extent / 2, rectangle.position.y - rectangle.extent/2, rectangle.extent, rectangle.extent)
         else
             table.insert(removeRectangles, x)
@@ -60,7 +70,7 @@ function Globals:draw()
     for x = 1, #self.debugLines do
         local line = self.debugLines[x]
         if love.timer.getTime() < line.time + line.timeToStay and self.debug then
-            love.graphics.setColor(line.color.r, line.color.g, line.color.b)
+            love.graphics.setColor(love.math.colorFromBytes(line.color.r, line.color.g, line.color.b))
             love.graphics.line(line.start_position.x, line.start_position.y, line.end_pos.x, line.end_pos.y)
         else
             table.insert(removeLines, x)
@@ -76,7 +86,7 @@ function Globals:draw()
     end
 
     if self.debug then
-        love.graphics.setColor(255, 255, 255)
+        love.graphics.setColor(love.math.colorFromBytes(255, 255, 255))
         love.graphics.print(math.ceil(1 / love.timer.getDelta()), 0, 0)
     end
     collectgarbage("collect")

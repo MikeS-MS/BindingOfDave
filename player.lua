@@ -1,4 +1,5 @@
 local Entity = require("entity")
+
 Player = {}
 Player.__index = Player
 setmetatable(Player, Entity)
@@ -7,8 +8,8 @@ function Player:OnCollisionChanged(fixture)
 
 end
 
-function Player.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
-    local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+function Player.new(hp, damage, x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+    local object = Entity.new(hp, damage, x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     object.__index = Player
     setmetatable(object, Player)
     object.type = "player"
@@ -22,15 +23,16 @@ function Player:OnBeginOverlap(this_fixture, other_entity, other_fixture, coll)
 
 end
 
+function Player:destroy()
+    self.global_settings:Restart()
+end
+
 function Player:OnKeyReleased(key, scancode)
     if key == "1" then
         self.canDebug = true
     end
     if key == "2" then
         self.canShowBounds = true
-    end
-    if key == "q" or key == "e" then
-        self.canSwitchRoom = true
     end
 end
 
@@ -49,18 +51,6 @@ function Player:update(dt)
             self.level.global_settings.showbounds = not self.level.global_settings.showbounds
         end
         self.canShowBounds = false
-    end
-    if love.keyboard.isDown("q") then
-        if self.canSwitchRoom then
-            self.level:setCurrentRoom(self.level.rooms[2])
-            self.canSwitchRoom = false
-        end
-    end
-    if love.keyboard.isDown("e") then
-        if self.canSwitchRoom then
-            self.level:setCurrentRoom(self.level.rooms[1])
-            self.canSwitchRoom = false
-        end
     end
     if love.keyboard.isDown('a') then
         velocity.x = self.velocity.x * -1

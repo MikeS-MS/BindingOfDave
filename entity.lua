@@ -22,21 +22,33 @@ function Entity:CreateCollision(x, y, world, width, height, scale, collision_exp
     return body
 end
 
-function Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+function Entity.new(hp, damage, x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     local image = love.graphics.newImage(imagefilename)
     local width, height = image:getWidth(), image:getHeight()
-    local object = setmetatable({default_velocity = {x = 600, y = 600}, velocity = {x = 600 * global_settings.scale.x, y = 600 * global_settings.scale.y}, image = image, rotation = 0, global_settings = global_settings, level = level, collision_expansion = collision_expansion, collision_mode = collision_mode}, Entity)
-    local body = object:CreateCollision(
-                                        x,
-                                        y,
-                                        world,
-                                        width,
-                                        height,
-                                        global_settings.scale,
-                                        collision_expansion,
-                                        collision_mode)
+    local object = setmetatable({max_hp = hp, current_hp = hp, damage = damage, draw_health_bar = true, default_velocity = {x = 600, y = 600}, velocity = {x = 600 * global_settings.scale.x, y = 600 * global_settings.scale.y}, image = image, rotation = 0, global_settings = global_settings, level = level, collision_expansion = collision_expansion, collision_mode = collision_mode}, Entity)
+    object:CreateCollision(
+                            x,
+                            y,
+                            world,
+                            width,
+                            height,
+                            global_settings.scale,
+                            collision_expansion,
+                            collision_mode)
     object.id = level:getAvailableID()
     return object
+end
+
+function Entity:hit(damage)
+    local new_health = self.current_hp - damage
+
+    if new_health > 0 then
+        self.current_hp = new_health
+        self:OnHit()
+    else
+        self.current_hp = 0
+        self:destroy()
+    end
 end
 
 function Entity:destroy()
@@ -65,6 +77,10 @@ function Entity:OnEndOverlap(this_fixture, other_entity, other_fixture, coll)
 
 end
 
+function Entity:OnHit()
+
+end
+
 function Entity:updateVelocity(scale)
     self.velocity.x = self.default_velocity.x * scale.x
     self.velocity.y = self.default_velocity.y * scale.y
@@ -88,7 +104,7 @@ function Entity:OnScaleChanged(new_scale)
                                 self.image:getWidth() + self.collision_expansion.width,
                                 self.image:getHeight() + self.collision_expansion.height,
                                 scale,
-                                {width = 0, height = 0},
+                                {width = 1, height = 1},
                                 self.collision_mode)
 
 end
@@ -125,12 +141,25 @@ function Entity:RotateToFacePosition(x, y)
 end
 
 function Entity:update(dt)
+
 end
 
 function Entity:draw()
-    love.graphics.setColor(255, 255, 255)
+    love.graphics.setColor(love.math.colorFromBytes(255, 255, 255))
     local transform = self:getTransform()
     love.graphics.draw(self.image, transform.position.x, transform.position.y, self.rotation, self.global_settings.scale.x, self.global_settings.scale.y, transform.origin.x, transform.origin.y)
+
+    if self.draw_health_bar then
+        local health_bar_width, health_bar_height = 100 * self.global_settings.scale.x, 20 * self.global_settings.scale.y
+        local divider = 20 * self.global_settings.scale.y
+        local bar_pos = {x = transform.position.x - health_bar_width / 2, y = (transform.position.y - self.image:getHeight() / 2) - health_bar_height - divider}
+        local hpPercent = self.current_hp / self.max_hp
+
+        love.graphics.setColor(love.math.colorFromBytes(255, 255, 255))
+        love.graphics.rectangle('fill', bar_pos.x, bar_pos.y, health_bar_width, health_bar_height)
+        love.graphics.setColor(love.math.colorFromBytes(255, 0, 0))
+        love.graphics.rectangle('fill', bar_pos.x, bar_pos.y, health_bar_width * hpPercent, health_bar_height)
+    end
 end
 
 return Entity

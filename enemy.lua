@@ -6,10 +6,11 @@ Enemy = {}
 Enemy.__index = Enemy
 setmetatable(Enemy, Entity)
 
-function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, room)
-    local object = Entity.new(x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
+function Enemy.new(difficulty, hp, damage, x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level, room)
+    local object = Entity.new(hp, damage, x, y, world, imagefilename, collision_expansion, collision_mode, global_settings, level)
     object.__index = Enemy
     setmetatable(object, Enemy)
+    object.difficulty = difficulty
     object.room = room
     object.navigation_nodes = {}
     object.type = "enemy"
@@ -18,12 +19,12 @@ function Enemy.new(x, y, world, imagefilename, collision_expansion, collision_mo
     object.shouldMove = true
     object.canShoot = true
     object.time_shot = 0
-    object.shoot_cd = 3
+    object.shoot_cd = 3 / difficulty
     object.default_velocity.x = 300
     object.default_velocity.y = 300
     object:updateVelocity(global_settings.scale)
     object.range = 1200 * global_settings.scale.x
-    object.fov = 60
+    object.fov = 90
     object:spawnView()
     return object
 end
@@ -389,10 +390,10 @@ function Enemy:getPatrolLocations()
         if self.level.global_settings.debug then
             for x = 1, #self.positions do
                 local nav_position = self.positions[x]
-                local color = {r = 1, g = 1, b = 0}
+                local color = {r = 255, g = 255, b = 0}
 
                 if x == #self.positions then
-                    color = {r = 0, g = 1, b = 0}
+                    color = {r = 0, g = 255, b = 0}
                 end
 
                 self.level.global_settings:drawDebugRectangle(nav_position, 10, color, 2)
@@ -420,7 +421,7 @@ end
 function Enemy:shoot(position)
     if self.canShoot then
         local transform = self:getTransform()
-        local projectile = Projectile.new(transform.position.x, transform.position.y, position.x, position.y, self.room.world, "data/Projectile.png", {width = 0, height = 0}, true, self.global_settings, self.level, self.room)
+        local projectile = Projectile.new(self.difficulty, 0, self.damage, transform.position.x, transform.position.y, position.x, position.y, self.room.world, "data/Projectile.png", {width = 1, height = 1}, true, self.global_settings, self.level, self.room, self.id)
         self.room:addEntityToList(projectile)
         self.time_shot = love.timer.getTime()
         self.canShoot = false

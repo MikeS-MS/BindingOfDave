@@ -6,13 +6,57 @@ local Player = require("player")
 Level = {}
 
 
-function Level:new(level_file, room_files, global_settings)
+function Level:new(level_file, global_settings)
     local object = {currentRoom = nil, global_settings = global_settings, spawn_location = {x = 0, y = 0}, entities = {}}
     setmetatable(object, {__index = Level})
+    local settings = require(level_file)
     local rooms = {}
-    for __, room_file in pairs(room_files) do
-        table.insert(rooms, Room:new(room_file, object, global_settings))
+    local sides = {"left", "top", "right", "bottom"}
+
+    math.randomseed(os.time())
+    local back_door_next_room_teleport = ""
+    local back_door_side = "left"
+
+    for x = 1, #settings.rooms do
+        local room_file = settings.rooms[x]
+        local last_room = false
+        local first_room = false
+        local side_index = 1
+        local front_door_side = ""
+
+        repeat
+            side_index = math.random(#sides)
+            front_door_side = sides[side_index]
+        until back_door_side ~= front_door_side
+
+        if x == 1 then
+            first_room = true
+        elseif x == #settings.rooms then
+            last_room = true
+        end
+        
+        local front_door_next_room_teleport = ""
+        if side_index > 2 then
+            front_door_next_room_teleport = sides[side_index - 2]
+        elseif side_index < 3 then
+            front_door_next_room_teleport = sides[side_index + 2]
+        end
+
+        local room_settings = {
+            is_first_room = first_room,
+            is_last_room = last_room,
+            next_room_index = x + 1,
+            back_door_side = back_door_side,
+            back_door_next_room_teleport = back_door_next_room_teleport,
+            front_door_side = front_door_side,
+            front_door_next_room_teleport = front_door_next_room_teleport,
+            difficulty = settings.difficulty}
+
+        table.insert(rooms, Room:new(room_file, room_settings, object, global_settings))
+        back_door_side = front_door_next_room_teleport
+        back_door_next_room_teleport = front_door_side
     end
+
     object.rooms = rooms
     object:setCurrentRoom(rooms[1], true)
     object:load()
@@ -79,7 +123,8 @@ function Level:load()
     if self.currentRoom then
         -- spawn player
         if not self.persistent_player then
-            self.persistent_player = Player.new(
+            self.persistent_player = Player.new(60,
+                                                0,
                                                 self.currentRoom.spawn_location.x,
                                                 self.currentRoom.spawn_location.y,
                                                 self.currentRoom.world,

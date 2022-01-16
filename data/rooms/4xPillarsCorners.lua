@@ -8,8 +8,8 @@ return {
   height = 27,
   tilewidth = 32,
   tileheight = 32,
-  nextlayerid = 8,
-  nextobjectid = 14,
+  nextlayerid = 9,
+  nextobjectid = 22,
   properties = {},
   tilesets = {
     {
@@ -451,6 +451,141 @@ return {
           visible = true,
           properties = {
             ["type"] = "player"
+          }
+        },
+        {
+          id = 18,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1337.1,
+          y = 169.383,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 19,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1330.69,
+          y = 682.667,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 20,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 189.915,
+          y = 672.401,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 21,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 175.799,
+          y = 175.799,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 8,
+      name = "DoorLocations",
+      visible = false,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 14,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 64,
+          y = 432,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "left"
+          }
+        },
+        {
+          id = 15,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 768,
+          y = 64,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "top"
+          }
+        },
+        {
+          id = 16,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1472,
+          y = 432,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "right"
+          }
+        },
+        {
+          id = 17,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 768,
+          y = 800,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "bottom"
           }
         }
       }

@@ -1,12 +1,14 @@
 local sti = require("sti")
 local CollisionManager = require("collision")
 local Enemy = require("enemy")
+local Door = require("door")
+local HealthPickup = require("health_pickup")
 Room = {}
 
-function Room:new(filename, level, global_settings)
+function Room:new(filename, room_settings, level, global_settings)
     local map = sti(filename)
     local world = love.physics.newWorld(0, 0)
-    local object = {map = map, entities = {}, entitiesToDestroy = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 50}
+    local object = {map = map, entities = {}, doors = {}, health_pickups_to_spawn = {}, room_settings = room_settings, enemy_spawn_locations = {}, entitiesToDestroy = {}, world = world, level = level, global_settings = global_settings, spawn_location = {x = 0, y = 0}, navigation_nodes_density = 50}
     setmetatable(object, {__index = Room})
     return object
 end
@@ -35,9 +37,7 @@ function Room:load()
                         )
                     end
                 end
-            end
-
-            if layer.name == "SpawnLocations" then
+            elseif layer.name == "SpawnLocations" then
                 local objects = layer.objects
 
                 for y = 1, #objects do
@@ -46,13 +46,112 @@ function Room:load()
                     if object.properties.type == "player" then
                         self.spawn_location.x = object.x * self.global_settings.scale.x
                         self.spawn_location.y = object.y * self.global_settings.scale.y
+                    elseif object.properties.type == "enemy" then
+                        table.insert(self.enemy_spawn_locations, {x = object.x * self.global_settings.scale.x, y = object.y * self.global_settings.scale.y})
                     end
                 end
+            elseif layer.name == "DoorLocations" then
+                local objects = layer.objects
+                local side_positions = {}
+                local teleport_side_positions = {}
+                local width, height = love.graphics.getDimensions()
+                local centerx, centery = width / 2, height / 2
+
+                for y = 1, #objects do
+                    local object = objects[y]
+                    local position = {
+                        x = object.x * self.global_settings.scale.x,
+                        y = object.y * self.global_settings.scale.y
+                    }
+                    side_positions[object.properties.side] = position
+                    teleport_side_positions[object.properties.side] = Utilities:AddVecWithVec(Utilities:MultiplyVecByNumber(Utilities:getUnitDirection(position, {x = centerx, y = centery}), 100 * self.global_settings.scale.x), position)
+                end
+                self.teleport_positions = teleport_side_positions
+                self.door_positions = side_positions
             end
         end
 
+        self:spawnEnemies()
+        self:spawnDoors()
         self.loaded = true
     end
+end
+
+function Room:spawnEnemies()
+    for x = 1, self.room_settings.difficulty do
+        local width, height = love.graphics.getDimensions()
+        local random_position = {x = width / 2, y = height / 2}
+
+        if #self.enemy_spawn_locations > 0 then
+            random_position = self.enemy_spawn_locations[math.random(#self.enemy_spawn_locations)]
+        end
+
+        local enemy = Enemy.new(self.room_settings.difficulty, 30, 10, random_position.x, random_position.y, self.world, "data/Enemy.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
+        self:addEntity(enemy)
+    end
+end
+
+function Room:spawnDoors()
+    local room_settings = self.room_settings
+
+    -- back door
+    if not room_settings.is_first_room then
+        local door_position = self.door_positions[room_settings.back_door_side]
+        local angle = Room.getDoorAngle(room_settings.back_door_side)
+        local door = Door.new(
+            0,
+            0,
+            door_position.x,
+            door_position.y,
+            self.world,
+            "data/Door.png",
+            "data/DoorOpen.png",
+            {width = 2, height = 2},
+            true,
+            self.global_settings,
+            self.level,
+            angle,
+            true,
+            room_settings.next_room_index - 2,
+            room_settings.back_door_next_room_teleport)
+        table.insert(self.doors, door)
+    end
+
+    -- front door
+    if not room_settings.is_last_room then
+        local door_position = self.door_positions[room_settings.front_door_side]
+        local angle = Room.getDoorAngle(room_settings.front_door_side)
+        local door = Door.new(
+            0,
+            0,
+            door_position.x,
+            door_position.y,
+            self.world,
+            "data/Door.png",
+            "data/DoorOpen.png",
+            {width = 2, height = 2},
+            true,
+            self.global_settings,
+            self.level,
+            angle,
+            false,
+            room_settings.next_room_index,
+            room_settings.front_door_next_room_teleport)
+        table.insert(self.doors, door)
+    end
+end
+
+function Room.getDoorAngle(side)
+    local rad_conversion = math.pi / 180
+    if side == "left" then
+        return -90 * rad_conversion
+    elseif side == "right" then
+        return 90 * rad_conversion
+    elseif side == "bottom" then
+        return 180 * rad_conversion
+    end
+
+    return 0
 end
 
 function Room:unload()
@@ -64,26 +163,20 @@ function Room:activate(transitory_player)
     if transitory_player ~= nil then
         local inside = false
 
-        for __, entity in pairs(self.entities) do
-            if transitory_player.id == entity.id then
+        for _, entity in pairs(self.entities) do
+            if transitory_player.type == entity.type then
                 inside = true
             end
         end
 
         if not inside then
             local transform = transitory_player:getTransform()
-            transitory_player:CreateCollision(transform.position.x, transform.position.y, self.world, transitory_player.image:getWidth(), transitory_player.image:getHeight(), self.global_settings.scale, {width = 0, height = 0}, false)
+            transitory_player:CreateCollision(transform.position.x, transform.position.y, self.world, transitory_player.image:getWidth(), transitory_player.image:getHeight(), self.global_settings.scale, {width = 1, height = 1}, false)
             table.insert(self.entities, transitory_player)
         end
     end
+
     self.world:setCallbacks(BeginContact, EndContact, PreSolve, PostSolve)
-    if not self.spawned then
-        local enemy = Enemy.new(500, 500, self.world, "data/Enemy.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
-        self:addEntity(enemy)
-        local enemy2 = Enemy.new(200, 200, self.world, "data/Enemy.png", {width = 0, height = 0}, false, self.global_settings, self.level, self)
-        self:addEntity(enemy2)
-        self.spawned = true
-    end
 end
 
 function Room:deactivate()
@@ -115,12 +208,21 @@ function Room:addEntity(new_entity)
 end
 
 function Room:isEntityInList(entity)
-    for __, e in pairs(self.entities) do
+    for _, e in pairs(self.entities) do
         if e.id == entity.id then
             return true
         end
     end
     return false
+end
+
+function Room:getEntity(id)
+    for _, e in pairs(self.entities) do
+        if e.id == id then
+            return e
+        end
+    end
+    return nil
 end
 
 function Room:isIDAvailable(id)
@@ -241,6 +343,39 @@ function Room:isPointInsideSomething(x, y, extent)
     return false
 end
 
+function Room:spawnHealthPickup(health)
+    local width, height = love.graphics.getDimensions()
+    local random_location = {x = 0, y = 0}
+
+    repeat
+        random_location.x = math.random(width)
+        random_location.y = math.random(height)
+    until not self:isPointInsideSomething(random_location.x, random_location.y, 0)
+
+    table.insert(self.health_pickups_to_spawn, {health = 0, damage = health, x = random_location.x, y = random_location.y, imagefilename = "data/HealthPickup.png", collision_expansion = {width = 1, height = 1}, collision_mode = true})
+end
+
+function Room:spawnAllPickups()
+    for _, pickup in pairs(self.health_pickups_to_spawn) do
+        local hp_pickup = HealthPickup.new(
+            pickup.health,
+            pickup.damage,
+            pickup.x,
+            pickup.y,
+            self.world,
+            pickup.imagefilename,
+            pickup.collision_expansion,
+            pickup.collision_mode,
+            self.global_settings,
+            self.level,
+            self)
+        self:addEntityToList(hp_pickup)
+    end
+
+    self.health_pickups_to_spawn = {}
+    collectgarbage("collect")
+end
+
 function Room:addEntityToList(entity)
     if not self:isEntityInList(entity) then
         table.insert(self.entities, entity)
@@ -251,6 +386,22 @@ function Room:OnScaleChanged(new_scale)
     local width, height = love.graphics.getDimensions()
     if new_scale.x < 1 and new_scale.y < 1 then
         self.map:resize(width + (width * new_scale.x), height + (height * new_scale.y))
+    end
+end
+
+function Room:OnEntitiesKilled()
+    local can_open_door = true
+    for _, entity in pairs(self.entities) do
+        if entity.type == "enemy" then
+            can_open_door = false
+            break
+        end
+    end
+
+    if can_open_door then
+        for _, door in pairs(self.doors) do
+            door.enabled = true
+        end
     end
 end
 
@@ -276,14 +427,27 @@ function Room:markForDestruction(entity)
 end
 
 function Room:destroyEntities()
+    local entities = {}
+
     for _, index in pairs(self.entitiesToDestroy) do
         local entity = self.entities[index]
         local body = entity.fixture:getBody()
         body:destroy()
-        table.remove(self.entities, index)
+        table.insert(entities, entity)
     end
+
+    for _, e in pairs(entities) do
+        local success, index = self:doesEntityExistInRoom(e)
+
+        if success then
+            table.remove(self.entities, index)
+        end
+    end
+
     self.entitiesToDestroy = {}
     collectgarbage("collect")
+
+    self:OnEntitiesKilled()
 end
 
 function BeginContact(fa, fb, coll)
@@ -329,10 +493,15 @@ end
 function Room:update(dt)
     self.map:update(dt)
     self:destroyEntities()
+    self:spawnAllPickups()
     for _, entity in pairs(self.entities) do
         if entity ~= nil then
             entity:update(dt)
         end
+    end
+
+    for _, door in pairs(self.doors) do
+        door:update(dt)
     end
 
     if self.world ~= nil then
@@ -350,13 +519,13 @@ function Room:drawDebug()
                     if not fixture:isSensor() then
                         love.graphics.setColor(love.math.colorFromBytes(0, 255, 0))
                     else
-                        love.graphics.setColor(love.math.colorFromBytes(0, 255, 255))
+                        love.graphics.setColor(love.math.colorFromBytes(0, 255, 255, 50))
                     end
                 elseif data.type == "player" then
                     love.graphics.setColor(love.math.colorFromBytes(0, 255, 0))
                 end
             else
-                love.graphics.setColor(255, 0, 0)
+                love.graphics.setColor(love.math.colorFromBytes(255, 0, 0))
             end
  
             love.graphics.polygon('fill', body:getWorldPoints(shape:getPoints()))
@@ -367,7 +536,15 @@ end
 function Room:draw()
     self.map:draw(0, 0, self.global_settings.scale.x, self.global_settings.scale.y)
 
-    for __, entity in pairs(self.entities) do
+    local doors = self.doors
+
+    for x = 1, #doors do
+        local door = doors[x]
+
+        door:draw()
+    end
+
+    for _, entity in pairs(self.entities) do
         if entity ~= nil then
             entity:draw()
         end

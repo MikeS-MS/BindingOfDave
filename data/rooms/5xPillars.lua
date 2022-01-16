@@ -8,8 +8,8 @@ return {
   height = 27,
   tilewidth = 32,
   tileheight = 32,
-  nextlayerid = 8,
-  nextobjectid = 15,
+  nextlayerid = 9,
+  nextobjectid = 26,
   properties = {},
   tilesets = {
     {
@@ -457,13 +457,193 @@ return {
           type = "",
           shape = "rectangle",
           x = 767.5,
-          y = 207,
+          y = 149.667,
           width = 0,
           height = 0,
           rotation = 0,
           visible = true,
           properties = {
             ["type"] = "player"
+          }
+        },
+        {
+          id = 15,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1350.67,
+          y = 161.333,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 16,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1348,
+          y = 701.333,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 17,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 177.333,
+          y = 704,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 18,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 185.333,
+          y = 161.333,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 19,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 556,
+          y = 425.333,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 20,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 764,
+          y = 612,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        },
+        {
+          id = 21,
+          name = "EnemySpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 970.667,
+          y = 428,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["type"] = "enemy"
+          }
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 8,
+      name = "DoorLocations",
+      visible = false,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 22,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 1472,
+          y = 432,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "right"
+          }
+        },
+        {
+          id = 23,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 64,
+          y = 432,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "left"
+          }
+        },
+        {
+          id = 24,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 768,
+          y = 64,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "top"
+          }
+        },
+        {
+          id = 25,
+          name = "DoorSpawnLocation",
+          type = "",
+          shape = "rectangle",
+          x = 768,
+          y = 800,
+          width = 0,
+          height = 0,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["side"] = "bottom"
           }
         }
       }
