@@ -15,7 +15,6 @@ function Player.new(hp, damage, x, y, world, imagefilename, collision_expansion,
     object.type = "player"
     object.canShowBounds = true
     object.canDebug = true
-    object.canSwitchRoom = true
     return object
 end
 

@@ -356,6 +356,8 @@ function Room:spawnHealthPickup(health)
 end
 
 function Room:spawnAllPickups()
+    local needs_cleaning = false
+
     for _, pickup in pairs(self.health_pickups_to_spawn) do
         local hp_pickup = HealthPickup.new(
             pickup.health,
@@ -370,10 +372,13 @@ function Room:spawnAllPickups()
             self.level,
             self)
         self:addEntityToList(hp_pickup)
+        needs_cleaning = true
     end
 
     self.health_pickups_to_spawn = {}
-    collectgarbage("collect")
+    if needs_cleaning then
+        collectgarbage("collect")
+    end
 end
 
 function Room:addEntityToList(entity)
@@ -428,6 +433,7 @@ end
 
 function Room:destroyEntities()
     local entities = {}
+    local needs_cleaning = false
 
     for _, index in pairs(self.entitiesToDestroy) do
         local entity = self.entities[index]
@@ -436,6 +442,7 @@ function Room:destroyEntities()
             body:destroy()
         end
         table.insert(entities, entity)
+        needs_cleaning = true
     end
 
     for _, e in pairs(entities) do
@@ -447,9 +454,10 @@ function Room:destroyEntities()
     end
 
     self.entitiesToDestroy = {}
-    collectgarbage("collect")
-
-    self:OnEntitiesKilled()
+    if needs_cleaning then
+        collectgarbage("collect")
+        self:OnEntitiesKilled()
+    end
 end
 
 function BeginContact(fa, fb, coll)

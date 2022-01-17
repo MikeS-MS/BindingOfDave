@@ -16,7 +16,6 @@ function Projectile.new(difficulty, hp, damage, x, y, target_x, target_y, world,
     object.room = room
     object.entity_id = entity_id
     object.direction = Utilities:getUnitDirection({x = x , y = y}, {x = target_x, y = target_y})
-    object.range = 100
     return object
 end
 

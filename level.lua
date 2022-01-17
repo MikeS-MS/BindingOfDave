@@ -5,9 +5,8 @@ local Player = require("player")
 
 Level = {}
 
-
 function Level:new(level_file, global_settings)
-    local object = {currentRoom = nil, global_settings = global_settings, spawn_location = {x = 0, y = 0}, entities = {}}
+    local object = {currentRoom = nil, global_settings = global_settings}
     setmetatable(object, {__index = Level})
     local settings = require(level_file)
     local rooms = {}
@@ -137,10 +136,6 @@ function Level:load()
         end
     end
     -- self:spawnMapCollisions()
-end
-
-function Level:AddEntity(entity)
-    table.insert(self.entities, self.persistent_player)
 end
 
 -- deprecated
