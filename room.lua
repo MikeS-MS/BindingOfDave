@@ -431,8 +431,10 @@ function Room:destroyEntities()
 
     for _, index in pairs(self.entitiesToDestroy) do
         local entity = self.entities[index]
-        local body = entity.fixture:getBody()
-        body:destroy()
+        if entity.fixture ~= nil then
+            local body = entity.fixture:getBody()
+            body:destroy()
+        end
         table.insert(entities, entity)
     end
 

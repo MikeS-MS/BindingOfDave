@@ -7,5 +7,5 @@ return {
         "data/rooms/4xPillarsCorners.lua",
         "data/rooms/5xPillars.lua"
     },
-    difficulty = 2
+    difficulty = 3
 }

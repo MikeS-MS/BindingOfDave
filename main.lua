@@ -6,7 +6,7 @@ if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
 end
 
 function SetRestart()
-    should_restart = true
+    SHOULD_RESTART = true
 end
 
 function Restart()
@@ -25,8 +25,7 @@ function love.load()
     gb:SetRestartCallback(SetRestart)
 
     love.physics.setMeter(gb.tile.width)
-    should_restart = true
-    Restart()
+    SHOULD_RESTART = true
 end
 
 function OnScaleChanged(new_scale)
@@ -42,9 +41,9 @@ function love.keyreleased(key, scancode)
 end
 
 function love.update(dt)
-    if should_restart then
+    if SHOULD_RESTART then
         Restart()
-        should_restart = false
+        SHOULD_RESTART = false
     end
     gb.deltatime = dt
     if CurrentLevel ~= nil then
