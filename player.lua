@@ -27,11 +27,13 @@ function Player:destroy()
 end
 
 function Player:OnKeyReleased(key, scancode)
-    if key == "1" then
-        self.canDebug = true
-    end
-    if key == "2" then
-        self.canShowBounds = true
+    if self.global_settings.can_debug then
+        if key == "1" then
+            self.canDebug = true
+        end
+        if key == "2" then
+            self.canShowBounds = true
+        end
     end
 end
 
@@ -41,16 +43,19 @@ function Player:update(dt)
     self:Move(0, 0)
     local velocity = {x = 0, y = 0}
 
-    if love.keyboard.isDown('1') and self.canDebug then
-        self.level.global_settings.debug = not self.level.global_settings.debug
-        self.canDebug = false
-    end
-    if love.keyboard.isDown('2') and self.canShowBounds then
-        if self.level.global_settings.debug then
-            self.level.global_settings.showbounds = not self.level.global_settings.showbounds
+    if self.global_settings.can_debug then
+        if love.keyboard.isDown('1') and self.canDebug then
+            self.level.global_settings.debug = not self.level.global_settings.debug
+            self.canDebug = false
         end
-        self.canShowBounds = false
+        if love.keyboard.isDown('2') and self.canShowBounds then
+            if self.level.global_settings.debug then
+                self.level.global_settings.showbounds = not self.level.global_settings.showbounds
+            end
+            self.canShowBounds = false
+        end
     end
+
     if love.keyboard.isDown('a') then
         velocity.x = self.velocity.x * -1
     end

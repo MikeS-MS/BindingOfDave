@@ -12,7 +12,8 @@ Globals = {
     debugLines = {},
     callback = nil,
     debug = false,
-    showbounds = false
+    showbounds = false,
+    can_debug = true
 }
 
 function Globals:SetRestartCallback(callback)
