@@ -404,6 +404,9 @@ function Room:OnEntitiesKilled()
     end
 
     if can_open_door then
+        if self.room_settings.is_last_room then
+            self.global_settings:Restart()
+        end
         for _, door in pairs(self.doors) do
             door.enabled = true
         end
